@@ -1,4 +1,11 @@
-import { Post, Comment, PostsManager, CommentsManger } from './post-model';
+import {
+  Post,
+  Subscriber,
+  Publisher,
+  Comment,
+  PostsManager,
+  CommentsManger,
+} from './post-model';
 
 const testPosts: Post[] = [
   {
@@ -40,9 +47,41 @@ describe('Model layer tests', () => {
     expect(postManager).toBeDefined();
     expect(postManager.currentPostIndex).toBe(0);
 
-    postManager.posts = testPosts;
-    expect(postManager.posts).toBe(testPosts);
+    postManager.setPosts(testPosts);
+    expect(postManager.getPosts()).toBe(testPosts);
     postManager.currentPostIndex = 2;
     expect(postManager.currentPost()).toBe(testPosts[2]);
+  });
+});
+
+// This is  a dummy subscriber just for testing
+class DummyView implements Subscriber {
+  update(publisher: Publisher): void {
+    console.log('dummy view update called');
+  }
+}
+
+describe('Pub sub tests with posts model', () => {
+  test('test that update of subscribe is called', () => {
+    const postManager = new PostsManager();
+    expect(postManager).toBeDefined();
+    expect(postManager.currentPostIndex).toBe(0);
+
+    // Setup subscription
+    const dummyView = new DummyView();
+    postManager.subscribe(dummyView);
+
+    const dummyView1 = new DummyView();
+    postManager.subscribe(dummyView1);
+
+    postManager.setPosts(testPosts);
+
+    // Whenever posts change, dummy view's update method
+    // should be called
+    const spy = vi.spyOn(dummyView, 'update');
+    expect(spy.getMockName()).toEqual('update');
+
+    const spy1 = vi.spyOn(dummyView1, 'update');
+    expect(spy1.getMockName()).toEqual('update');
   });
 });
