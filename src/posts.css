@@ -8,8 +8,22 @@
 nav {
   display: flex;
   justify-content: space-between;
-
+  align-items: center;
+  gap: 16px;
   margin-bottom: 2rem;
+}
+
+h2 {
+  font-size: 1.3rem;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+nav button {
+  flex-shrink: 0;
+  min-width: 85px;
 }
 
 .post-desc {

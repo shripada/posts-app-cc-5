@@ -1,3 +1,5 @@
+import { ActualPublisher } from './pub-sub';
+import { ModelStatus } from './model-status';
 export interface Post {
   /** id of user posting this post*/
   userId: number;
@@ -20,8 +22,6 @@ export interface PostsModel {
   currentPost: () => Post | undefined;
   setCurrentPostIndex: (newIndex: number) => void;
   getCurrentPostIndex: () => number;
-  setModelStatus: (modelStatus: ModelStatus) => void;
-  getModelStatus: () => ModelStatus;
 }
 
 export interface CommentsModel {
@@ -30,25 +30,11 @@ export interface CommentsModel {
   getCommentsForPost: (postId: number) => Comment[] | undefined;
 }
 
-export interface Subscriber {
-  update: (publisher: Publisher) => void;
-}
-/** publisher interface */
-export interface Publisher {
-  subscribers: Subscriber[];
-  subscribe: (subscriber: Subscriber) => void;
-  unsubscribe: (subscriber: Subscriber) => void;
-
-  updateSubscribers: () => void;
-}
-
-export type ModelStatus = 'pending' | 'available' | 'failure';
-
-export class PostsManager implements PostsModel, Publisher {
+export class PostsManager extends ActualPublisher implements PostsModel {
   public currentPostIndex: number = 0;
   posts: Post[] = [];
-  public subscribers: Subscriber[] = [];
-  private modelStatus: ModelStatus = 'pending';
+  public modelStatus: ModelStatus = new ModelStatus(this);
+
   // states in which model can be in
   // 1. pending
   // 2. available
@@ -58,25 +44,9 @@ export class PostsManager implements PostsModel, Publisher {
     return this.posts[this.currentPostIndex];
   }
 
-  subscribe(subscriber: Subscriber): void {
-    if (!this.subscribers.includes(subscriber)) {
-      this.subscribers.push(subscriber);
-    }
-  }
-
-  unsubscribe(subscriber: Subscriber): void {
-    this.subscribers = this.subscribers.filter((sub) => sub !== subscriber);
-  }
-
-  updateSubscribers(): void {
-    this.subscribers.forEach((subscriber) => {
-      subscriber.update(this);
-    });
-  }
-
   setPosts(posts: Post[]) {
     this.posts = posts;
-    this.modelStatus = 'available';
+    this.modelStatus.setModelStatus('available');
     this.updateSubscribers();
   }
 
@@ -96,22 +66,17 @@ export class PostsManager implements PostsModel, Publisher {
   getCurrentPostIndex(): number {
     return this.currentPostIndex;
   }
-
-  setModelStatus(modelStatus: ModelStatus): void {
-    this.modelStatus = modelStatus;
-    this.updateSubscribers();
-  }
-
-  getModelStatus() {
-    return this.modelStatus;
-  }
 }
 
-export class CommentsManger implements CommentsModel {
+export class CommentsManger extends ActualPublisher implements CommentsModel {
   commentsMap: Map<number, Comment[]> = new Map();
+
+  public modelStatus: ModelStatus = new ModelStatus(this);
 
   setCommentsForPost(comments: Comment[], postId: number) {
     this.commentsMap.set(postId, comments);
+    this.modelStatus.setModelStatus('available');
+    this.updateSubscribers();
   }
 
   getCommentsForPost(postId: number) {

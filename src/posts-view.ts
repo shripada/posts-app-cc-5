@@ -1,27 +1,30 @@
 import './style.css';
 import './posts.css';
-import { Subscriber, Publisher, PostsManager } from './post-model';
+import { CommentsManger, PostsManager } from './post-model';
+import { Subscriber, Publisher } from './pub-sub';
 
 export class PostsView implements Subscriber {
   postTitleElement: HTMLHeadingElement | null = null;
   postDescription: HTMLParagraphElement | null = null;
   prevButton: HTMLButtonElement | null = null;
   nextButton: HTMLButtonElement | null = null;
-
+  viewCommentsButton: HTMLButtonElement | null = null;
+  commentsList: HTMLUListElement | null = null;
+  postId: number = 0;
   constructor() {
     document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <div class="container">
         <section>
         <nav>
-         <button data-testid="prev-button">< previous</button>
+         <button data-testid="prev-button" class="left-button">< previous</button>
          <h2></h2>
-         <button data-testid="next-button">next ></button>
+         <button data-testid="next-button" class="right-button">next ></button>
         </nav>
         <p class="post-desc" data-testid="post-desc"> </p>
         </section>
             <section>
-            <button> View Comments </button>
-            <p class="comments">Comments of current post go here</p>
+            <button data-testid="view-comments"> View Comments </button>
+            <pre class="comments" data-testid="comments-list">Comments of current post go here</pre>
         </section>
         </div>
       `;
@@ -34,6 +37,14 @@ export class PostsView implements Subscriber {
     console.assert(this.postDescription !== null);
     console.assert(this.prevButton !== null);
     console.assert(this.nextButton !== null);
+
+    // Comments section
+    this.viewCommentsButton = document.querySelector(
+      '[data-testid="view-comments"]'
+    );
+    this.commentsList = document.querySelector('[data-testid="comments-list"]');
+    console.assert(this.viewCommentsButton !== null);
+    console.assert(this.commentsList !== null);
   }
 
   update(manager: Publisher) {
@@ -49,8 +60,8 @@ export class PostsView implements Subscriber {
       // If the model goes into failure state, that also need to be
       // made known to user.
 
-      const modelStatus = manager.getModelStatus();
-      switch (modelStatus) {
+      const modelStatus = manager.modelStatus;
+      switch (modelStatus.getModelStatus()) {
         case 'available': {
           const post = manager.currentPost();
           if (this.postTitleElement) {
@@ -60,7 +71,7 @@ export class PostsView implements Subscriber {
           if (this.postDescription) {
             this.postDescription.textContent = post?.body ?? 'body is missing';
           }
-
+          this.postId = manager.currentPost()?.id ?? 0;
           break;
         }
         case 'pending': {
@@ -80,6 +91,26 @@ export class PostsView implements Subscriber {
           if (this.postDescription) {
             this.postDescription.textContent = 'Failed, retry again!';
           }
+          break;
+        }
+      }
+    } else if (manager instanceof CommentsManger) {
+      switch (manager.modelStatus.getModelStatus()) {
+        case 'pending': {
+          this.commentsList!.textContent = 'Loading...';
+          break;
+        }
+        case 'available': {
+          this.commentsList!.textContent = JSON.stringify(
+            manager.getCommentsForPost(this.postId),
+            null,
+            4
+          );
+          break;
+        }
+        case 'failure': {
+          this.commentsList!.textContent =
+            'Failed to fetch comments, please try again later';
           break;
         }
       }
