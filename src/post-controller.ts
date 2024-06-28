@@ -1,6 +1,7 @@
+import { ZodError } from 'zod';
 import { PostsManager, Post, CommentsManger, Comment } from './post-model';
 import { PostsView } from './posts-view';
-import { getPosts, getCommnetsForPost } from './services';
+import { getPosts, getCommentsForPost } from './posts.service';
 
 export class PostController {
   commentsManager: CommentsManger;
@@ -56,12 +57,15 @@ export class PostController {
     this.postsManager.modelStatus.setModelStatus('pending');
     getPosts()
       .then((posts) => this.postsManager.setPosts(posts))
-      .catch(() => this.postsManager.modelStatus.setModelStatus('failure'));
+      .catch((error: unknown) => {
+        this.postsManager.modelStatus.setModelStatus('failure');
+        console.log(error as ZodError);
+      });
   }
 
   commentsForPost(postId: number): void {
     this.commentsManager.modelStatus.setModelStatus('pending');
-    getCommnetsForPost(postId)
+    getCommentsForPost(postId)
       .then((comments) =>
         this.commentsManager.setCommentsForPost(comments, postId)
       )

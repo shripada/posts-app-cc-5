@@ -5,7 +5,7 @@ export async function get<T>(url: string): Promise<T> {
     const delay = (timeout: number) =>
       new Promise((resolve) => setTimeout(resolve, timeout));
 
-    await delay(5000);
+    await delay(1000);
     return data;
   } catch (error: unknown) {
     throw new Error('Could not fetch the data for now, please try again later');
