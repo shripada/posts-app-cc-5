@@ -2,18 +2,18 @@ import { ActualPublisher } from './pub-sub';
 import { ModelStatus } from './model-status';
 import { z } from 'zod';
 
-export const PostSchema = z.object({
+export const postSchema = z.object({
   userId: z.number(),
   id: z.number(),
   title: z.string(),
   body: z.string(),
 });
 
-export const PostArraySchema = z.array(PostSchema);
+export const postArraySchema = z.array(postSchema);
 
-export type Post = z.infer<typeof PostSchema>;
+export type Post = z.infer<typeof postSchema>;
 
-export const CommentSchema = z.object({
+export const commentSchema = z.object({
   postId: z.number(),
   id: z.number(),
   name: z.string(),
@@ -21,7 +21,9 @@ export const CommentSchema = z.object({
   body: z.string(),
 });
 
-export type Comment = z.infer<typeof CommentSchema>;
+export const commentsArraySchema = z.array(commentSchema);
+
+export type Comment = z.infer<typeof commentSchema>;
 export interface PostsModel {
   setPosts: (posts: Post[]) => void;
   getPosts: () => Post[];

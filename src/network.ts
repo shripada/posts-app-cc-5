@@ -1,13 +1,23 @@
-export async function get<T>(url: string): Promise<T> {
+import { z } from 'zod';
+
+export async function get<T extends z.ZodTypeAny, D>(
+  url: string,
+  schema: T
+): Promise<D> {
   try {
     const response = await fetch(url);
-    const data = (await response.json()) as T;
+    const data = (await response.json()) as D;
+
+    const validatedData = schema.parse(data) as D;
+
     const delay = (timeout: number) =>
       new Promise((resolve) => setTimeout(resolve, timeout));
 
     await delay(1000);
-    return data;
+
+    return validatedData;
   } catch (error: unknown) {
-    throw new Error('Could not fetch the data for now, please try again later');
+    console.log((error as z.ZodError).flatten());
+    throw error;
   }
 }

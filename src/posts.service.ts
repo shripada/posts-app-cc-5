@@ -1,15 +1,15 @@
 import { Post, Comment } from './post-model';
 import { get } from './network';
-import { PostArraySchema, CommentSchema } from './post-model';
+import { postArraySchema, commentsArraySchema } from './post-model';
 
 export async function getPosts(): Promise<Post[]> {
-  const data = await get('https://jsonplaceholder.typicode.com/posts');
-
-  const validatedData = PostArraySchema.parse(data[0]);
-  return validatedData;
+  return get<typeof postArraySchema, Post[]>(
+    'https://2f7eaa73-e82b-425a-bb9b-e4abe79805b0.mock.pstmn.io/posts',
+    postArraySchema
+  );
 }
 
-export function getCommentsForPost(postId: number): Promise<Comment[]> {
+export async function getCommentsForPost(postId: number): Promise<Comment[]> {
   const url = `https://jsonplaceholder.typicode.com/posts/${postId}/comments`;
-  return get(url);
+  return get<typeof commentsArraySchema, Comment[]>(url, commentsArraySchema);
 }
