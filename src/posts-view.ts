@@ -1,8 +1,8 @@
 import './style.css';
 import './posts.css';
-import { CommentsManger, PostsManager } from './post-model';
+import { Comment, CommentsManger, PostsManager } from './post-model';
 import { Subscriber, Publisher } from './pub-sub';
-
+import { createElement } from './lib/dom-utility';
 export class PostsView implements Subscriber {
   postTitleElement: HTMLHeadingElement | null = null;
   postDescription: HTMLParagraphElement | null = null;
@@ -24,7 +24,7 @@ export class PostsView implements Subscriber {
         </section>
             <section>
             <button data-testid="view-comments"> View Comments </button>
-            <pre class="comments" data-testid="comments-list">Comments of current post go here</pre>
+            <ul class="comments" data-testid="comments-list">Comments of current post go here</ul>
         </section>
         </div>
       `;
@@ -101,11 +101,12 @@ export class PostsView implements Subscriber {
           break;
         }
         case 'available': {
-          this.commentsList!.textContent = JSON.stringify(
-            manager.getCommentsForPost(this.postId),
-            null,
-            4
-          );
+          // this.commentsList!.textContent = JSON.stringify(
+          //   manager.getCommentsForPost(this.postId),
+          //   null,
+          //   4
+          // );
+          this.buildCommentsList(manager.getCommentsForPost(this.postId));
           break;
         }
         case 'failure': {
@@ -114,6 +115,33 @@ export class PostsView implements Subscriber {
           break;
         }
       }
+    }
+  }
+
+  buildCommentsList(comments: Comment[] | undefined) {
+    if (comments) {
+      const commentListItems: Node[] = [];
+      comments.forEach((comment: Comment) => {
+        /*
+           <li> 
+              <h4>{comments.email}</h4>
+              <p>{comments.body}</p>
+           </li>
+        */
+        const h4 = createElement('h4', { style: 'color:green' }, comment.email);
+        const p = createElement(
+          'p',
+          { style: 'color:blue; font-size:1.2rem' },
+          comment.body
+        );
+        commentListItems.push(
+          createElement('li', { style: 'color:red' }, h4, p)
+        );
+      });
+
+      // We also now host this list of li items under our
+      // ul element (which is the host)
+      this.commentsList?.replaceChildren(...commentListItems);
     }
   }
 }
